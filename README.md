@@ -27,7 +27,7 @@ The core of the assembly process is a greedy overlap-layout-consensus approach t
 1.  Clone the repository:
 
     ```
-    git clone 
+    git clone https://github.com/zaurusman/genomeAssembly.git
     cd genomeAssembly
     ```
 
