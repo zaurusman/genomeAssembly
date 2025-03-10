@@ -8,11 +8,11 @@ mp.set_start_method('fork', force=True)
 
 def max_overlap(read1, read2, min_overlap=1):
     max_possible = min(len(read1), len(read2))
-    curr_overlap = 0
-    for i in range(min_overlap, max_possible + 1):
-        if read1[-i:] == read2[:i]:
-            curr_overlap = i
-    return curr_overlap
+    # Search from largest to smallest
+    for i in range(max_possible, min_overlap-1, -1):
+        if read1.endswith(read2[:i]):
+            return i
+    return 0
 
 def compute_overlap(read_index, reads, min_overlap):
 
@@ -236,15 +236,15 @@ def main():
 
     # Parameters
     N = 400  # Number of reads
-    l = 150  # Read length
+    l = 100  # Read length
     min_overlap = 20  # Minimum overlap for assembly
-    error_rate = 0.02 #introduce error rate
+    error_rate = 0.00 #introduce error rate
 
     # Generate reads
     reads = generate_reads(phix_genome, N, l,error_rate)
     # Apply k-mer based filtering
-    k = 10  # k-mer length
-    frequency_threshold = 2  # Minimum frequency to keep a read
+    k = 6  # k-mer length
+    frequency_threshold = 3  # Minimum frequency to keep a read
     filtered_reads = kmer_based_filtering(reads, k, frequency_threshold)
 
     print(f"Original number of reads: {len(reads)}")
@@ -271,7 +271,7 @@ def main():
     print(f"N50: {N50}")
     print(f"Correctness: {correctness:.2f}%")
 
-    create_graphs(min_overlap)  # Call the function to create the graphs
+    #create_graphs(min_overlap)  # Call the function to create the graphs
 
 if __name__ == "__main__":
     main()
