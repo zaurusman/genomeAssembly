@@ -169,7 +169,6 @@ def generate_kmers(read, k):
 
 def run_assembly_and_get_total_contig_length(N, l, error_rate, kmer_filter=False, k=10, frequency_threshold=2,min_overlap=20):
     """Runs the assembly pipeline and returns the total length of the contigs."""
-    # Load PhiX genome
     toy_genome = generate_toy_genome()
 
     # Generate reads
@@ -276,7 +275,7 @@ def create_combined_heatmap(results_map):
 
 # Main program
 def main():
-    # Load PhiX genome
+    
     toy_genome = generate_toy_genome()
     # Parameters
     N = 200  # Number of reads
