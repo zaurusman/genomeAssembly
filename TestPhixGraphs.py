@@ -6,13 +6,31 @@ from tqdm import tqdm
 
 mp.set_start_method('fork', force=True)
 
-def max_overlap(read1, read2, min_overlap=1):
+
+def max_overlap(read1, read2, min_overlap=1, error_rate=0.02):
+    """
+    Calculates the maximum overlap between two reads, allowing for mismatches,
+    but prioritizing perfect matches.
+    """
     max_possible = min(len(read1), len(read2))
-    # Search from largest to smallest
-    for i in range(max_possible, min_overlap-1, -1):
-        if read1.endswith(read2[:i]):
+    mismatches = 0
+    for i in range(max_possible, min_overlap - 1, -1):
+        if read1[-i:] == read2[:i]:
+            return i  # Perfect overlap found
+
+    for i in range(max_possible, min_overlap - 1, -1):
+        if i < max_possible:
+            if read1[-i - 1] != read2[i - 1]:
+                mismatches -= 1
+            if read1[-i] != read2[0]:
+                mismatches += 1
+        else:
+            mismatches = sum(c1 != c2 for c1, c2 in zip(read1[-i:], read2[:i]))
+
+        if mismatches / i <= error_rate:
             return i
-    return 0
+    return 0  # No acceptable overlap found
+
 
 def compute_overlap(read_index, reads, min_overlap):
 
@@ -101,20 +119,37 @@ def calculate_N50(contigs):
             return length
     return 0  # Should not happen if contigs is not empty
 
+
 def calculate_correctness(contigs, reference_genome):
-    """Calculates the correctness of the assembly by aligning contigs to the reference genome (assuming we have one for this assignment)"""
-    total_aligned_length = 0
+    """
+    Calculates the correctness of the assembly
+    """
+    ref_len = len(reference_genome)
+    coverage = [0] * ref_len
+
     for contig in contigs:
-        # Find the best alignment of the contig to the reference genome
-        best_alignment_length = 0
-        for i in range(len(reference_genome) - len(contig) + 1):
-            alignment_length = 0
-            for j in range(len(contig)):
-                if contig[j] == reference_genome[i + j]:
-                    alignment_length += 1
-            best_alignment_length = max(best_alignment_length, alignment_length)
-        total_aligned_length += best_alignment_length
-    return total_aligned_length / len(reference_genome)*100
+        contig_len = len(contig)
+        if contig_len > ref_len:
+            continue
+
+
+        ref_hash = hash(reference_genome[:contig_len])
+        contig_hash = hash(contig)
+
+        for i in range(ref_len - contig_len + 1):
+            if contig_hash == ref_hash:
+
+                if contig == reference_genome[i:i + contig_len]:
+                    for j in range(contig_len):
+                        coverage[i + j] = 1
+
+            if i < ref_len - contig_len:
+                ref_hash = hash(reference_genome[i + 1:i + contig_len + 1])
+
+    total_aligned = sum(coverage)
+    correctness = (total_aligned / ref_len) * 100
+    return correctness
+
 
 def kmer_based_filtering(reads, k, frequency_threshold):
     """Filter reads based on k-mer frequencies."""
@@ -163,7 +198,6 @@ def run_assembly_and_get_total_contig_length(N, l, error_rate, kmer_filter=False
 def create_graphs(min_overlap):
     """Creates the graphs for assembly quality assessment."""
 
-    # Load PhiX genome
     phix_genome = next(SeqIO.parse("files/NC_001422.fasta", "fasta")).seq
 
     # 1. Longest contig length with changing N (error-free)
@@ -236,14 +270,14 @@ def main():
 
     # Parameters
     N = 400  # Number of reads
-    l = 100  # Read length
+    l = 150  # Read length
     min_overlap = 20  # Minimum overlap for assembly
-    error_rate = 0.00 #introduce error rate
+    error_rate = 0.0 #introduce error rate
 
     # Generate reads
     reads = generate_reads(phix_genome, N, l,error_rate)
     # Apply k-mer based filtering
-    k = 6  # k-mer length
+    k = 10  # k-mer length
     frequency_threshold = 3  # Minimum frequency to keep a read
     filtered_reads = kmer_based_filtering(reads, k, frequency_threshold)
 
