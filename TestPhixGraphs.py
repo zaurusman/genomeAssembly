@@ -305,7 +305,7 @@ def main():
     print(f"N50: {N50}")
     print(f"Correctness: {correctness:.2f}%")
 
-    #create_graphs(min_overlap)  # Call the function to create the graphs
+    create_graphs(min_overlap)  # Call the function to create the graphs
 
 if __name__ == "__main__":
     main()
